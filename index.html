@@ -6,6 +6,8 @@
 <title>Printo Çmimet (30x25mm)</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<!-- Importojmë disa fonte nga Google Fonts që të kemi opsione të bukura -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Oswald:wght@400;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
   body { background:#f1f5f9; font-family: 'Segoe UI', sans-serif; padding:20px; }
   .card { border-radius:12px; border:none; box-shadow:0 2px 10px rgba(0,0,0,.06); }
@@ -24,17 +26,15 @@
     overflow: hidden;
   }
   
-  /* Stili për çmim me CENT (Euro majtas, Cent lart-djathtas, € poshtë) */
+  /* Stili për çmim me CENT */
   .price-format-cents {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: Arial, Helvetica, sans-serif;
     line-height: 1;
   }
 
   .price-cents-euro {
-    font-weight: 900;
     letter-spacing: -1px;
   }
 
@@ -47,7 +47,6 @@
   }
 
   .price-cents-top {
-    font-weight: 900;
     border-bottom: 2px solid #000;
     padding-bottom: 1px;
     margin-bottom: 1px;
@@ -57,14 +56,11 @@
   }
 
   .price-cents-bottom {
-    font-weight: 900;
     line-height: 1;
   }
 
-  /* Stili për çmim numër të plotë (pa cent) */
+  /* Stili për çmim numër të plotë */
   .price-format-whole {
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight: 900;
     color: #000;
     line-height: 1;
     white-space: nowrap;
@@ -89,7 +85,7 @@
 
   <div class="card p-4 mb-4">
     <div class="row g-4 align-items-end">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <label class="form-label fw-bold">Shkruaj Çmimin (€)</label>
         <div class="input-group input-group-lg">
           <input type="number" step="0.01" min="0" id="priceInput" class="form-control" placeholder="p.sh. 2, 1.50, 20" value="2" oninput="updatePreview()">
@@ -97,72 +93,89 @@
         </div>
       </div>
       
-      <div class="col-md-3">
+      <div class="col-md-2">
         <label class="form-label fw-bold">Sa etiketa?</label>
         <input type="number" id="copiesInput" class="form-control form-control-lg" min="1" max="100" value="1" oninput="updatePreview()">
       </div>
 
       <div class="col-md-3">
-        <button class="btn btn-outline-secondary w-100 btn-lg" onclick="document.getElementById('priceInput').value=''; updatePreview();">
-          <i class="bi bi-arrow-counterclockwise"></i> Pastro
-        </button>
+        <label class="form-label fw-bold">Zgjidh Fontin</label>
+        <select id="fontSelect" class="form-select form-select-lg" onchange="updatePreview()">
+          <option value="Arial, sans-serif">Arial (Standard)</option>
+          <option value="'Roboto', sans-serif">Roboto</option>
+          <option value="'Montserrat', sans-serif">Montserrat</option>
+          <option value="'Oswald', sans-serif">Oswald (I ngushtë)</option>
+          <option value="'Inter', sans-serif">Inter</option>
+          <option value="Impact, sans-serif">Impact (Shumë i trashë)</option>
+          <option value="'Times New Roman', serif">Times New Roman (Serif)</option>
+          <option value="'Courier New', monospace">Courier New (Monospace)</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label fw-bold">Trashësia</label>
+        <div class="d-flex gap-2">
+          <select id="weightSelect" class="form-select form-select-lg" onchange="updatePreview()">
+            <option value="900">Shumë i trashë (Black)</option>
+            <option value="700">I trashë (Bold)</option>
+            <option value="400">Normal</option>
+            <option value="300">I hollë (Light)</option>
+          </select>
+          <button class="btn btn-outline-secondary" onclick="document.getElementById('priceInput').value=''; updatePreview();">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="card p-4 text-center">
     <h6 class="mb-3 text-muted">👁️ Pamja paraprake (30×25mm)</h6>
-    <div class="preview-label">
-      <!-- Kjo pjesë mbushet nga JavaScript -->
+    <div class="preview-label" id="previewLabel">
       <div id="previewContainer"></div>
     </div>
   </div>
 </div>
 
 <script>
-// Funksioni që krijon HTML-in e brendshëm bazuar në çmimin dhe madhësinë dinamike
-function generatePriceHTML(priceStr) {
+// Funksioni që krijon HTML-in e brendshëm bazuar në çmimin, fontin dhe trashësinë
+function generatePriceHTML(priceStr, fontFamily, weight) {
   let num = parseFloat(priceStr);
   if (isNaN(num)) num = 0;
 
-  // Kontrollojmë nëse ka cent (nëse numri nuk është i plotë)
   let hasCents = (num % 1 !== 0);
 
   if (hasCents) {
-    // Ndan numrin në pjesë të plotë dhe cent
     let whole = Math.floor(num);
     let cents = Math.round((num - whole) * 100);
     let centsStr = cents.toString().padStart(2, '0');
 
-    // Llogaritja e madhësisë për pjesën e plotë bazuar në numrin e shifrave
     let wholeStr = whole.toString();
     let fontSizeWhole = 85;
     if (wholeStr.length === 2) fontSizeWhole = 65;
     if (wholeStr.length >= 3) fontSizeWhole = 50;
 
-    // Llogaritja e madhësisë për centat dhe euron
     let fontSizeTop = fontSizeWhole * 0.4;
     let fontSizeBottom = fontSizeWhole * 0.45;
 
     return `
-      <div class="price-format-cents">
+      <div class="price-format-cents" style="font-family: ${fontFamily}; font-weight: ${weight};">
         <div class="price-cents-euro" style="font-size: ${fontSizeWhole}px;">${whole}</div>
         <div class="price-cents-right">
-          <div class="price-cents-top" style="font-size: ${fontSizeTop}px; width: ${fontSizeTop * 1.2}px;">${centsStr}</div>
+          <div class="price-cents-top" style="font-size: ${fontSizeTop}px; width: ${fontSizeTop * 1.3}px;">${centsStr}</div>
           <div class="price-cents-bottom" style="font-size: ${fontSizeBottom}px;">€</div>
         </div>
       </div>
     `;
   } else {
-    // Nëse është numër i plotë, llogarisim madhësinë bazuar në shifra
     let numStr = num.toString();
     let fontSize = 90;
     
-    if (numStr.length === 2) fontSize = 70;
+    if (numStr.length === 2) fontSize = 75; // U rrit pak nga 70 ne 75 për t'u dukur më mirë
     if (numStr.length === 3) fontSize = 55;
     if (numStr.length >= 4) fontSize = 40;
 
-    return `<div class="price-format-whole" style="font-size: ${fontSize}px;">${num}€</div>`;
+    return `<div class="price-format-whole" style="font-family: ${fontFamily}; font-weight: ${weight}; font-size: ${fontSize}px;">${num}€</div>`;
   }
 }
 
@@ -170,11 +183,16 @@ function generatePriceHTML(priceStr) {
 function updatePreview() {
   let price = document.getElementById('priceInput').value;
   let container = document.getElementById('previewContainer');
+  let fontFamily = document.getElementById('fontSelect').value;
+  let weight = document.getElementById('weightSelect').value;
+  
+  // Aplikojmë fontin edhe tek kutia e pamjes paraprake që të duket njësoj
+  document.getElementById('previewLabel').style.fontFamily = fontFamily;
   
   if (price === '' || isNaN(price)) {
-    container.innerHTML = generatePriceHTML('0');
+    container.innerHTML = generatePriceHTML('0', fontFamily, weight);
   } else {
-    container.innerHTML = generatePriceHTML(price);
+    container.innerHTML = generatePriceHTML(price, fontFamily, weight);
   }
 }
 
@@ -182,6 +200,8 @@ function updatePreview() {
 function printEtiketat() {
   let price = document.getElementById('priceInput').value;
   let copies = parseInt(document.getElementById('copiesInput').value);
+  let fontFamily = document.getElementById('fontSelect').value;
+  let weight = document.getElementById('weightSelect').value;
 
   if (isNaN(price) || price < 0 || price === '') {
     alert('Ju lutem shkruani një çmim të saktë!');
@@ -191,47 +211,44 @@ function printEtiketat() {
     copies = 1;
   }
 
-  // Marrim HTML-in e brendshëm të çmimit
-  let priceHTML = generatePriceHTML(price);
+  let priceHTML = generatePriceHTML(price, fontFamily, weight);
 
-  // Ndërtojmë HTML-in për printim
   let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Print Çmimi</title>';
-  html += '<style>';
-  // CSS për format 30x25mm - pa margjina
-  html += '@page { size: 30mm 25mm; margin: 0; }';
-  html += 'html, body { margin:0; padding:0; background:#fff; font-family: Arial, Helvetica, sans-serif; }';
   
-  // Kuti për secilën etiketë
+  // Importojmë fontet edhe në iframe që të printohen saktë
+  html += '<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Oswald:wght@400;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">';
+  
+  html += '<style>';
+  html += '@page { size: 30mm 25mm; margin: 0; }';
+  html += 'html, body { margin:0; padding:0; background:#fff; }';
+  
   html += '.label { width:30mm; height:25mm; box-sizing:border-box; ' +
           'display:flex; align-items:center; justify-content:center; ' +
           'page-break-after:always; page-break-inside:avoid; margin:0; padding:0; overflow:hidden; }';
   html += '.label:last-child { page-break-after:auto; }';
   
-  // Kopjojme CSS-in per formatimin e çmimit ne iframe
   html += `
     .price-format-cents { display: flex; align-items: center; justify-content: center; line-height: 1; }
-    .price-cents-euro { font-weight: 900; letter-spacing: -1px; }
+    .price-cents-euro { letter-spacing: -1px; }
     .price-cents-right { display: flex; flex-direction: column; justify-content: center; align-items: center; margin-left: 2px; }
-    .price-cents-top { font-weight: 900; border-bottom: 2px solid #000; padding-bottom: 1px; margin-bottom: 1px; line-height: 1; text-align: center; }
-    .price-cents-bottom { font-weight: 900; line-height: 1; }
-    .price-format-whole { font-weight: 900; color: #000; line-height: 1; white-space: nowrap; letter-spacing: -2px; }
+    .price-cents-top { border-bottom: 2px solid #000; padding-bottom: 1px; margin-bottom: 1px; line-height: 1; text-align: center; }
+    .price-cents-bottom { line-height: 1; }
+    .price-format-whole { color: #000; line-height: 1; white-space: nowrap; letter-spacing: -2px; }
   `;
   
   html += '</style></head><body>';
 
-  // Shtojmë aq etiketa sa kërkon përdoruesi
   for (let i = 0; i < copies; i++) {
     html += '<div class="label">' + priceHTML + '</div>';
   }
 
-  // Shtojmë script për të nisur printimin automatikisht
   html += '<script>';
   html += 'window.onload = function() {';
-  html += '  setTimeout(function(){ window.print(); }, 300);';
+  // Presim pak me shume qe fontet te ngarkohen mire nga Google Fonts
+  html += '  setTimeout(function(){ window.print(); }, 500);'; 
   html += '};';
   html += '<\/script></body></html>';
 
-  // Krijojmë iframe të fshehur për printim
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.right = '0';
@@ -243,7 +260,6 @@ function printEtiketat() {
   iframe.srcdoc = html;
 }
 
-// Nis preview kur hapet faqja
 window.addEventListener('load', updatePreview);
 </script>
 </body>
